@@ -23,12 +23,13 @@ def get_recall(indices: torch.Tensor, indices_ground_truth: torch.Tensor):
 
 class CachedSddmmLinear(nn.Module):
 
-    def __init__(self, in_features, out_features, topk_ratio):
+    def __init__(self, in_features, out_features, topk_ratio, recall_thres):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.topk_ratio = float(topk_ratio)
         self.topk = int(self.in_features * self.topk_ratio)
+        self.recall_thres = float(recall_thres)
         self.topk_p70 = int(self.in_features * 0.7)
         self.topk_p50 = int(self.in_features * 0.5)
         self.verbose = False
@@ -40,8 +41,8 @@ class CachedSddmmLinear(nn.Module):
         self.weight_slices = []
 
     @staticmethod
-    def from_linear(linear, topk_ratio):
-        cached_sddmm_linear = CachedSddmmLinear(linear.in_features, linear.out_features, topk_ratio)
+    def from_linear(linear, topk_ratio, recall_thres):
+        cached_sddmm_linear = CachedSddmmLinear(linear.in_features, linear.out_features, topk_ratio, recall_thres)
         cached_sddmm_linear.weight = linear.weight
         cached_sddmm_linear.bias = linear.bias
         return cached_sddmm_linear.to(linear.weight.device)
@@ -86,7 +87,7 @@ class CachedSddmmLinear(nn.Module):
                 best_p70_recall = get_recall(self.indices[best_idx], topk_p70_indices)
                 best_p50_recall = get_recall(self.indices[best_idx], topk_p50_indices)
             print(f"Use existing: best_recall={best_recall:.2f}, best_p70_rc={best_p70_recall:.2f}, best_p50_rc={best_p50_recall:.2f}, cache_size={len(self.indices)}")
-        if best_recall < 0.9:
+        if best_recall < self.recall_thres:
             self.cache_slice(topk_indices)
             best_idx = len(self.indices) - 1
             best_recall = 1.0

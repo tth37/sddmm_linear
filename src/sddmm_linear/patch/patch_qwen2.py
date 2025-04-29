@@ -44,10 +44,10 @@ def patch_qwen2_sddmm_linear(model, topk_ratio, cluster_results):
 
     return model
 
-def patch_qwen2_cached_sddmm_linear(model, topk_ratio):
+def patch_qwen2_cached_sddmm_linear(model, topk_ratio, recall_thres):
     for layer in model.model.layers:
-        layer.mlp.gate_proj = CachedSddmmLinear.from_linear(layer.mlp.gate_proj, topk_ratio)
-        layer.mlp.up_proj = CachedSddmmLinear.from_linear(layer.mlp.up_proj, topk_ratio)
-        layer.mlp.down_proj = CachedSddmmLinear.from_linear(layer.mlp.down_proj, topk_ratio)
+        layer.mlp.gate_proj = CachedSddmmLinear.from_linear(layer.mlp.gate_proj, topk_ratio, recall_thres)
+        layer.mlp.up_proj = CachedSddmmLinear.from_linear(layer.mlp.up_proj, topk_ratio, recall_thres)
+        layer.mlp.down_proj = CachedSddmmLinear.from_linear(layer.mlp.down_proj, topk_ratio, recall_thres)
         
     return model
