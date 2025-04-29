@@ -64,11 +64,8 @@ class CachedSddmmLinear(nn.Module):
     @torch.no_grad()
     def forward(self, x):
         bsz, seq, _ = x.shape
-        if bsz * seq != 1:
+        if seq != 1:
             x = x.view(bsz * seq, -1)
-            x_mean = x.mean(dim=0, keepdim=True)
-            topk_indices = get_topk_indices(x_mean, self.topk)
-            # self.cache_slice(topk_indices)
             output = x @ self.weight.T
             if self.bias is not None:
                 output += self.bias
@@ -76,9 +73,10 @@ class CachedSddmmLinear(nn.Module):
             return output
         
         x = x.view(bsz * seq, -1)
-        topk_indices = get_topk_indices(x, self.topk)
-        topk_p70_indices = get_topk_indices(x, self.topk_p70)
-        topk_p50_indices = get_topk_indices(x, self.topk_p50)
+        x_mean = x.abs().mean(dim=0, keepdim=True)
+        topk_indices = get_topk_indices(x_mean, self.topk)
+        topk_p70_indices = get_topk_indices(x_mean, self.topk_p70)
+        topk_p50_indices = get_topk_indices(x_mean, self.topk_p50)
         best_idx, best_recall = self.find_closest(topk_indices)
         if self.verbose:
             if len(self.indices) == 0:
