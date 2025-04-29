@@ -67,7 +67,7 @@ class GriffinLinear(nn.Module):
     @torch.no_grad()
     def forward(self, x):
         bsz, seq, _ = x.shape
-        if bsz * seq != 1:
+        if seq != 1:
             x = x.view(bsz * seq, -1)
             row_norm = F.normalize(x, p=2, dim=1)
             col_norm = torch.sum(row_norm**2, dim=0)
@@ -81,19 +81,8 @@ class GriffinLinear(nn.Module):
             return output
         
         x = x.view(bsz * seq, -1)
-        topk_indices = get_topk_indices(x, self.topk)
-        topk_p70_indices = get_topk_indices(x, self.topk_p70)
-        topk_p50_indices = get_topk_indices(x, self.topk_p50)
-        best_idx, best_recall = self.find_closest(topk_indices)
-        if self.verbose:
-            if len(self.indices) == 0:
-                best_p70_recall, best_p50_recall = 0.0, 0.0
-            else:
-                best_p70_recall = get_recall(self.indices[best_idx], topk_p70_indices)
-                best_p50_recall = get_recall(self.indices[best_idx], topk_p50_indices)
-            print(f"Use existing: best_recall={best_recall:.2f}, best_p70_rc={best_p70_recall:.2f}, best_p50_rc={best_p50_recall:.2f}, cache_size={len(self.indices)}")
-        indices = self.indices[best_idx]
-        weight_slice = self.weight_slices[best_idx]
+        indices = self.indices[0]
+        weight_slice = self.weight_slices[0]
         output = x[:, indices] @ weight_slice.T
         if self.bias is not None:
             output += self.bias
