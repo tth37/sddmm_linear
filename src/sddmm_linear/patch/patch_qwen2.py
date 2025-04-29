@@ -3,6 +3,7 @@ from ..collector_linear import CollectorLinear
 from ..sddmm_linear import SddmmLinear
 from ..cached_sddmm_linear import CachedSddmmLinear
 from ..griffin_linear import GriffinLinear
+from ..fast_cached_sddmm_linear import FastCachedSddmmLinear
 
 
 def patch_qwen2_collective_linear(model, topk_ratio):
@@ -58,5 +59,13 @@ def patch_qwen2_griffin_linear(model, topk_ratio):
         layer.mlp.gate_proj = GriffinLinear.from_linear(layer.mlp.gate_proj, topk_ratio)
         layer.mlp.up_proj = GriffinLinear.from_linear(layer.mlp.up_proj, topk_ratio)
         layer.mlp.down_proj = GriffinLinear.from_linear(layer.mlp.down_proj, topk_ratio)
+        
+    return model
+
+def patch_qwen2_fast_cached_sddmm_linear(model, topk_ratio, recall_thres):
+    for layer in model.model.layers:
+        layer.mlp.gate_proj = FastCachedSddmmLinear.from_linear(layer.mlp.gate_proj, topk_ratio, recall_thres)
+        layer.mlp.up_proj = FastCachedSddmmLinear.from_linear(layer.mlp.up_proj, topk_ratio, recall_thres)
+        layer.mlp.down_proj = FastCachedSddmmLinear.from_linear(layer.mlp.down_proj, topk_ratio, recall_thres)
         
     return model
